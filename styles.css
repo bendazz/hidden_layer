@@ -83,6 +83,19 @@ tbody tr:nth-child(even) { background: #f9fbff; }
 .answer ul { padding-left: 18px; margin: 6px 0 0; }
 .answer li { margin: 4px 0; }
 
+/* Buttons */
+.btn {
+  background: #3367d6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.btn.small { padding: 4px 8px; font-size: 12px; }
+.btn:hover { background: #2856b6; }
+.btn:active { background: #204a9a; }
+
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr; }
   .panel { min-height: unset; }

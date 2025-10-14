@@ -23,16 +23,15 @@ const data = [
 // We include biases as part of weight matrices by augmenting inputs with x0=1;
 // to keep with user's request: X0 is the bias input feature (fixed 1s).
 
-// Weights: input(3) -> hidden(4)
-// w1[h][i] = weight from input i to hidden h; order inputs: [x0, x1, x2]
+// Weights: input(3) -> hidden non-bias units (H1, H2, H3)
+// H0 is a bias unit (=1) with NO incoming weights.
+// w1[j][i] = weight from input i to hidden Hj (j=1..3 mapped to indices 0..2); inputs: [x0, x1, x2]
 const w1 = [
-  // h0
-  [0.2, 0.8, -0.3],
-  // h1
+  // H1
   [-0.1, -0.6, 0.7],
-  // h2
+  // H2
   [0.05, 0.4, 0.4],
-  // h3
+  // H3
   [0.3, -0.2, -0.5],
 ];
 
@@ -46,13 +45,15 @@ const w2 = [
 const relu = (z) => Math.max(0, z);
 const sigmoid = (z) => 1 / (1 + Math.exp(-z));
 
-// Forward pass for one sample
+// Forward pass for one sample (H0 is bias=1)
 function forward(x0, x1, x2) {
   const x = [x0, x1, x2];
+  // Compute H1..H3
   const h = new Array(4);
-  for (let j = 0; j < 4; j++) {
+  h[0] = 1; // H0 bias
+  for (let j = 1; j <= 3; j++) {
     let z = 0;
-    for (let i = 0; i < 3; i++) z += w1[j][i] * x[i];
+    for (let i = 0; i < 3; i++) z += w1[j - 1][i] * x[i];
     h[j] = relu(z);
   }
   let zOut = 0;
@@ -112,14 +113,12 @@ function renderNetwork() {
   const outY = [210];
   const r = 18;
 
-  // Draw edges input->hidden
-  for (let j = 0; j < 4; j++) {
+  // Draw edges input->hidden (skip H0 since it's bias=1)
+  for (let j = 1; j <= 3; j++) {
     for (let i = 0; i < 3; i++) {
-      const w = w1[j][i];
+      const w = w1[j - 1][i];
       drawEdge(svg, colX[0] + r, inY[i], colX[1] - r, hidY[j], w);
-      const mx = (colX[0] + colX[1]) / 2;
-      const my = (inY[i] + hidY[j]) / 2 - 6;
-  // weight labels removed for declutter
+      // weight labels removed for declutter
     }
   }
 
@@ -137,8 +136,9 @@ function renderNetwork() {
   const inputs = ['X0', 'X1', 'X2'];
   for (let i = 0; i < 3; i++) drawNode(svg, colX[0], inY[i], r, inputs[i]);
 
-  // Hidden nodes
-  for (let j = 0; j < 4; j++) drawNode(svg, colX[1], hidY[j], r, `H${j}`);
+  // Hidden nodes (H0 is bias)
+  drawNode(svg, colX[1], hidY[0], r, 'H0=1');
+  for (let j = 1; j < 4; j++) drawNode(svg, colX[1], hidY[j], r, `H${j}`);
 
   // Output node
   drawNode(svg, colX[2], outY[0], r, 'Ŷ');
@@ -220,9 +220,62 @@ function init() {
   renderWeights();
   renderLoss();
   renderFinalAnswerVectors();
+  setupCsvDownloads();
 }
 
 window.addEventListener('DOMContentLoaded', init);
+
+// ----------------------
+// 7) CSV downloads
+// ----------------------
+function setupCsvDownloads() {
+  const dataBtn = document.getElementById('download-data-csv');
+  const w1Btn = document.getElementById('download-w1-csv');
+  const w2Btn = document.getElementById('download-w2-csv');
+  if (dataBtn) dataBtn.addEventListener('click', downloadDataCsv);
+  if (w1Btn) w1Btn.addEventListener('click', downloadW1Csv);
+  if (w2Btn) w2Btn.addEventListener('click', downloadW2Csv);
+}
+
+function toCsv(rows) {
+  return rows.map(r => r.map(x => String(x)).join(',')).join('\n') + '\n';
+}
+
+function triggerDownload(filename, text) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadDataCsv() {
+  // Export X1, X2, Y (omit X0)
+  const header = ['X1', 'X2', 'Y'];
+  const rows = [header, ...data.map(d => [d.x1, d.x2, d.y])];
+  triggerDownload('data_X1_X2_Y.csv', toCsv(rows));
+}
+
+function downloadW1Csv() {
+  // Rows: H0..H3, Cols: X0, X1, X2
+  const header = ['h/x', 'X0', 'X1', 'X2'];
+  const rows = [header];
+  for (let j = 0; j < w1.length; j++) {
+    rows.push([`H${j}`, ...w1[j]]);
+  }
+  triggerDownload('w1_4x3.csv', toCsv(rows));
+}
+
+function downloadW2Csv() {
+  // Row: Yhat, Cols: H0..H3
+  const header = ['out/h', 'H0', 'H1', 'H2', 'H3'];
+  const row = ['Ŷ', ...w2[0]];
+  triggerDownload('w2_1x4.csv', toCsv([header, row]));
+}
 
 // ----------------------
 // 8) Render weights table
@@ -233,11 +286,11 @@ function renderWeights() {
   if (!w1Body || !w2Body) return;
   w1Body.innerHTML = '';
   w2Body.innerHTML = '';
-  // w1 rows per hidden neuron
+  // w1 rows for hidden non-bias units H1..H3
   for (let j = 0; j < w1.length; j++) {
     const tr = document.createElement('tr');
     const th = document.createElement('th');
-    th.textContent = `H${j}`;
+    th.textContent = `H${j+1}`;
     th.style.textAlign = 'left';
     tr.appendChild(th);
     for (let i = 0; i < w1[j].length; i++) {
@@ -334,33 +387,33 @@ function renderFinalAnswerVectors() {
       q7El.innerHTML = `w₂₀(old) = ${w20_old.toFixed(4)} → w₂₀(new) = ${w20_new.toFixed(4)} (avg grad = ${avgGrad.toFixed(6)})`;
     }
   }
-  // Q7: ∂H0/∂w10 = ReLU'(z0) * x0 = 1{z0>0} * x0
+  // Q7: ∂H1/∂w (first input weight X0→H1) = ReLU'(z1) * x0
   if (q8El) {
-    const w10 = w1[0][0];
-    const w11 = w1[0][1];
-    const w12 = w1[0][2];
-    const dH0_dw10 = data.map(d => {
-      const z0 = w10 * d.x0 + w11 * d.x1 + w12 * d.x2;
-      const reluPrime = z0 > 0 ? 1 : 0;
-      return reluPrime * d.x0;
+    const w10 = w1[0][0]; // H1 row, X0 column
+    const w11 = w1[0][1]; // H1 row, X1 column
+    const w12 = w1[0][2]; // H1 row, X2 column
+    const dH1_dw10 = data.map(d => {
+      const z1 = w10 * d.x0 + w11 * d.x1 + w12 * d.x2;
+      const reluPrime = z1 > 0 ? 1 : 0;
+      return reluPrime * d.x0; // x0 = 1
     });
-    q8El.innerHTML = `[${dH0_dw10.map(v=>v.toFixed(4)).join(', ')}]`;
+    q8El.innerHTML = `[${dH1_dw10.map(v=>v.toFixed(4)).join(', ')}]`;
   }
-  // Q8: ∂L/∂w10 per-sample = (ŷ - y) * w20 * ReLU'(z0) * x0
+  // Q8: ∂L/∂w (X0→H1) per-sample = (ŷ - y) * w21 * ReLU'(z1) * x0
   if (q9El) {
-    const w20 = w2[0][0];
+    const w21 = w2[0][1]; // output weight from H1 to Ŷ
     const w10 = w1[0][0];
     const w11 = w1[0][1];
     const w12 = w1[0][2];
     const dL_dw10_vec = data.map((d, idx) => {
-      const z0 = w10 * d.x0 + w11 * d.x1 + w12 * d.x2;
-      const reluPrime = z0 > 0 ? 1 : 0;
-      return (yhatVec[idx] - yVec[idx]) * w20 * reluPrime * d.x0;
+      const z1 = w10 * d.x0 + w11 * d.x1 + w12 * d.x2;
+      const reluPrime = z1 > 0 ? 1 : 0;
+      return (yhatVec[idx] - yVec[idx]) * w21 * reluPrime * d.x0;
     });
     q9El.innerHTML = `[${dL_dw10_vec.map(v=>v.toFixed(6)).join(', ')}]`;
   }
   // Q9: Full gradient matrices (averaged over dataset)
-  if (q10W2El || q10W1El) {
+  if (q10W2El || q10W1El || q11UpdW2El || q11UpdW1El) {
     const N = data.length;
     // dL/dw2 (1x4): average over samples of (yhat - y) * h_j for each j
     const gradW2 = new Array(4).fill(0);
@@ -370,23 +423,20 @@ function renderFinalAnswerVectors() {
     }
     for (let j = 0; j < 4; j++) gradW2[j] /= N;
 
-    // dL/dw1 (4x3): for each hidden j and input i: average of (dL/dH_j) * ReLU'(z_j) * x_i
-    // where dL/dH_j = (yhat - y) * w2_j
-    const gradW1 = Array.from({ length: 4 }, () => new Array(3).fill(0));
+    // dL/dw1 (3x3 for H1..H3): average of (yhat - y) * w2_j * ReLU'(z_j) * x_i, with j in {1,2,3}
+    const gradW1 = Array.from({ length: 3 }, () => new Array(3).fill(0));
     for (let s = 0; s < N; s++) {
-      // Compute z for each hidden unit j to get ReLU'
-      for (let j = 0; j < 4; j++) {
-        const z_j = w1[j][0] * data[s].x0 + w1[j][1] * data[s].x1 + w1[j][2] * data[s].x2;
+      for (let j = 1; j <= 3; j++) {
+        const z_j = w1[j-1][0] * data[s].x0 + w1[j-1][1] * data[s].x1 + w1[j-1][2] * data[s].x2;
         const reluPrime = z_j > 0 ? 1 : 0;
         const dL_dHj = (yhatVec[s] - yVec[s]) * w2[0][j];
-        const factor = (dL_dHj) * reluPrime;
-        // accumulate for inputs i = 0..2
-        gradW1[j][0] += factor * data[s].x0;
-        gradW1[j][1] += factor * data[s].x1;
-        gradW1[j][2] += factor * data[s].x2;
+        const factor = dL_dHj * reluPrime;
+        gradW1[j-1][0] += factor * data[s].x0;
+        gradW1[j-1][1] += factor * data[s].x1;
+        gradW1[j-1][2] += factor * data[s].x2;
       }
     }
-    for (let j = 0; j < 4; j++) {
+    for (let j = 0; j < 3; j++) {
       for (let i = 0; i < 3; i++) gradW1[j][i] /= N;
     }
 
@@ -402,7 +452,7 @@ function renderFinalAnswerVectors() {
     if (q11UpdW2El || q11UpdW1El) {
       const lr = 0.23;
       const newW2 = gradW2.map((g, j) => w2[0][j] - lr * g);
-      const newW1 = gradW1.map((row, j) => row.map((g, i) => w1[j][i] - lr * g));
+  const newW1 = gradW1.map((row, j) => row.map((g, i) => w1[j][i] - lr * g));
       if (q11UpdW2El) q11UpdW2El.textContent = `[ ${newW2.map(v=>v.toFixed(6)).join(', ')} ]`;
       if (q11UpdW1El) {
         const rowsNew = newW1.map(row => `[ ${row.map(v=>v.toFixed(6)).join(', ')} ]`);
