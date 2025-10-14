@@ -87,7 +87,7 @@
       </div>
         <div class="question-card" style="margin-top:20px;">
           <div class="q-text">
-            <strong>Q2.</strong> What is <code>∂ŷ/∂H₀</code>?
+            <strong>Q2.</strong> What is <code>∂ŷ/∂H₁</code>?
           </div>
           <details class="answer">
             <summary>Reveal answer</summary>
@@ -100,7 +100,7 @@
         </div>
         <div class="question-card" style="margin-top:20px;">
           <div class="q-text">
-            <strong>Q3.</strong> What is <code>∂L/∂H₀</code>?
+            <strong>Q3.</strong> What is <code>∂L/∂H₁</code>?
           </div>
           <details class="answer">
             <summary>Reveal answer</summary>
@@ -113,7 +113,7 @@
         </div>
         <div class="question-card" style="margin-top:20px;">
           <div class="q-text">
-            <strong>Q4.</strong> What is <code>∂ŷ/∂w₂₀</code> (the derivative of the output with respect to the first output-layer weight)?
+            <strong>Q4.</strong> What is <code>∂ŷ/∂w₂₁</code> (the derivative of the output with respect to the H₁→Ŷ weight)?
           </div>
           <details class="answer">
             <summary>Reveal answer</summary>
@@ -126,7 +126,7 @@
         </div>
         <div class="question-card" style="margin-top:20px;">
           <div class="q-text">
-            <strong>Q5.</strong> What is <code>∂L/∂w₂₀</code>?
+            <strong>Q5.</strong> What is <code>∂L/∂w₂₁</code>?
           </div>
           <details class="answer">
             <summary>Reveal answer</summary>
@@ -139,12 +139,12 @@
         </div>
         <div class="question-card" style="margin-top:20px;">
           <div class="q-text">
-            <strong>Q6.</strong> Using a learning rate of 0.23, update <code>w₂₀</code> with one gradient descent step using the average gradient from Q5.
+            <strong>Q6.</strong> Using a learning rate of 0.23, update <code>w₂₁</code> with one gradient descent step using the average gradient from Q5.
           </div>
           <details class="answer">
             <summary>Reveal answer</summary>
             <div class="answer-body">
-              <div style="font-size:12px; color:#586174;">Update rule: w₂₀ ← w₂₀ − 0.23 · (1/N) · Σ[(ŷ − y)·H₀]</div>
+              <div style="font-size:12px; color:#586174;">Update rule: w₂₁ ← w₂₁ − 0.23 · (1/N) · Σ[(ŷ − y)·H₁]</div>
               <div id="q7-updated-weight" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
                 <em>Updated weight will appear here…</em>
               </div>

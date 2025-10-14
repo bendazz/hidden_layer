@@ -365,35 +365,42 @@ function renderFinalAnswerVectors() {
   }
   // Q3: ∂ŷ/∂H0 vector = ŷ(1-ŷ) * w20
   if (q3El) {
-    const w20 = w2[0][0];
-    const dy_dH0 = yhatVec.map(yhat => yhat * (1 - yhat) * w20);
-    q3El.innerHTML = `[${dy_dH0.map(v=>v.toFixed(4)).join(', ')}]`;
+    const w21 = w2[0][1];
+    const dy_dH1 = yhatVec.map(yhat => yhat * (1 - yhat) * w21);
+    q3El.innerHTML = `[${dy_dH1.map(v=>v.toFixed(4)).join(', ')}]`;
   }
   // Q4: ∂L/∂H0 = (ŷ - y) w20
   if (q4El) {
-    const w20 = w2[0][0];
-    const dL_dH0 = yhatVec.map((yhat, idx) => (yhat - yVec[idx]) * w20);
-    q4El.innerHTML = `[${dL_dH0.map(v=>v.toFixed(4)).join(', ')}]`;
+    const w21 = w2[0][1];
+    const dL_dH1 = yhatVec.map((yhat, idx) => (yhat - yVec[idx]) * w21);
+    q4El.innerHTML = `[${dL_dH1.map(v=>v.toFixed(4)).join(', ')}]`;
   }
   if (q5El) {
-    // ∂ŷ/∂w20 = ŷ(1-ŷ) * H0
-    const dy_dw20 = yhatVec.map((yhat, idx) => yhat * (1 - yhat) * h0Vec[idx]);
-    q5El.innerHTML = `[${dy_dw20.map(v=>v.toFixed(4)).join(', ')}]`;
+    // ∂ŷ/∂w21 = ŷ(1-ŷ) * H1
+    // Need H1 vector: recompute h1 per sample
+    const h1Vec = data.map(d => {
+      const z1 = w1[0][0]*d.x0 + w1[0][1]*d.x1 + w1[0][2]*d.x2;
+      return Math.max(0, z1);
+    });
+    const dy_dw21 = yhatVec.map((yhat, idx) => yhat * (1 - yhat) * h1Vec[idx]);
+    q5El.innerHTML = `[${dy_dw21.map(v=>v.toFixed(4)).join(', ')}]`;
   }
   if (q6El) {
-    // ∂L/∂w20 = ∑ over samples of (∂L/∂ŷ) * (∂ŷ/∂w20)
-    // We show per-sample contributions: (ŷ - y) * H0
-    // because (∂L/∂ŷ) = (ŷ - y)/(ŷ(1-ŷ)) and ∂ŷ/∂w20 = ŷ(1-ŷ)H0, factors cancel.
-    const dL_dw20_vec = yhatVec.map((yhat, idx) => (yhat - yVec[idx]) * h0Vec[idx]);
-    q6El.innerHTML = `[${dL_dw20_vec.map(v=>v.toFixed(4)).join(', ')}]`;
+    // ∂L/∂w21 = ∑ (∂L/∂ŷ)(∂ŷ/∂w21); per-sample: (ŷ - y) * H1
+    const h1Vec = data.map(d => {
+      const z1 = w1[0][0]*d.x0 + w1[0][1]*d.x1 + w1[0][2]*d.x2;
+      return Math.max(0, z1);
+    });
+    const dL_dw21_vec = yhatVec.map((yhat, idx) => (yhat - yVec[idx]) * h1Vec[idx]);
+    q6El.innerHTML = `[${dL_dw21_vec.map(v=>v.toFixed(4)).join(', ')}]`;
     // If Q7 exists, compute the averaged gradient and the updated weight
     if (q7El) {
-      const N = dL_dw20_vec.length || 1;
-      const avgGrad = dL_dw20_vec.reduce((a,b)=>a+b, 0) / N;
+      const N = dL_dw21_vec.length || 1;
+      const avgGrad = dL_dw21_vec.reduce((a,b)=>a+b, 0) / N;
       const lr = 0.23;
-      const w20_old = w2[0][0];
-      const w20_new = w20_old - lr * avgGrad;
-      q7El.innerHTML = `w₂₀(old) = ${w20_old.toFixed(4)} → w₂₀(new) = ${w20_new.toFixed(4)} (avg grad = ${avgGrad.toFixed(6)})`;
+      const w21_old = w2[0][1];
+      const w21_new = w21_old - lr * avgGrad;
+      q7El.innerHTML = `w₂₁(old) = ${w21_old.toFixed(4)} → w₂₁(new) = ${w21_new.toFixed(4)} (avg grad = ${avgGrad.toFixed(6)})`;
     }
   }
   // Q7: ∂H1/∂w (first input weight X0→H1) = ReLU'(z1) * x0
