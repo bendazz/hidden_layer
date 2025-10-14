@@ -29,26 +29,27 @@
           </table>
         </div>
         <div style="margin-top:8px;">
-          <button id="download-data-csv" class="btn small">Download data (X1,X2,Y) CSV</button>
+          <button id="copy-data-np" class="btn small">Copy data (NumPy)</button>
         </div>
         <h2 style="margin-top:16px;">Weights</h2>
         <div class="table-wrap small" id="weights-wrap">
           <table id="weights-table" aria-label="Network weights">
             <thead>
-              <tr><th colspan="4">w1 (inputs → hidden non-bias H1..H3)</th></tr>
-              <tr class="subhead"><th>h→/x</th><th>X0</th><th>X1</th><th>X2</th></tr>
+              <tr><th colspan="4">w1 (inputs × hidden non-bias H1..H3)</th></tr>
+              <tr class="subhead"><th>x→/h</th><th>H1</th><th>H2</th><th>H3</th></tr>
             </thead>
             <tbody id="w1-body"></tbody>
             <thead>
-              <tr><th colspan="5">w2 (hidden H0..H3 → output)</th></tr>
-              <tr class="subhead"><th>out→/h</th><th>H0</th><th>H1</th><th>H2</th><th>H3</th></tr>
+              <tr><th colspan="2">w2 (hidden H0..H3 → output)</th></tr>
+              <tr class="subhead"><th>h→/out</th><th>Ŷ</th></tr>
             </thead>
             <tbody id="w2-body"></tbody>
           </table>
         </div>
         <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-          <button id="download-w1-csv" class="btn small">Download w1 CSV</button>
-          <button id="download-w2-csv" class="btn small">Download w2 CSV</button>
+          <button id="copy-w1-np" class="btn small">Copy w1 (NumPy)</button>
+          <button id="copy-w2-np" class="btn small">Copy w2 (NumPy)</button>
+          <button id="copy-all-np" class="btn small" title="Copy data, w1, and w2 in one snippet">Copy all (NumPy)</button>
         </div>
       </section>
 

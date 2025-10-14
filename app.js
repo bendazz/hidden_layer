@@ -220,61 +220,68 @@ function init() {
   renderWeights();
   renderLoss();
   renderFinalAnswerVectors();
-  setupCsvDownloads();
+  setupNumpyCopy();
 }
 
 window.addEventListener('DOMContentLoaded', init);
 
 // ----------------------
-// 7) CSV downloads
+// 7) NumPy copy-to-clipboard
 // ----------------------
-function setupCsvDownloads() {
-  const dataBtn = document.getElementById('download-data-csv');
-  const w1Btn = document.getElementById('download-w1-csv');
-  const w2Btn = document.getElementById('download-w2-csv');
-  if (dataBtn) dataBtn.addEventListener('click', downloadDataCsv);
-  if (w1Btn) w1Btn.addEventListener('click', downloadW1Csv);
-  if (w2Btn) w2Btn.addEventListener('click', downloadW2Csv);
+function setupNumpyCopy() {
+  const dataBtn = document.getElementById('copy-data-np');
+  const w1Btn = document.getElementById('copy-w1-np');
+  const w2Btn = document.getElementById('copy-w2-np');
+  const allBtn = document.getElementById('copy-all-np');
+  if (dataBtn) dataBtn.addEventListener('click', () => copyText(buildDataNumpy()));
+  if (w1Btn) w1Btn.addEventListener('click', () => copyText(buildW1Numpy()));
+  if (w2Btn) w2Btn.addEventListener('click', () => copyText(buildW2Numpy()));
+  if (allBtn) allBtn.addEventListener('click', () => copyText(buildAllNumpy()));
 }
 
-function toCsv(rows) {
-  return rows.map(r => r.map(x => String(x)).join(',')).join('\n') + '\n';
+function buildDataNumpy() {
+  // X: (N, 3) for [X0, X1, X2] including bias column of ones; y: (N,)
+  const X = data.map(d => [d.x0, d.x1, d.x2]);
+  const y = data.map(d => d.y);
+  const xRows = X.map(r => `[${r.map(n => formatNumpy(n)).join(', ')}]`).join(',\n  ');
+  const yRow = y.map(n => formatNumpy(n)).join(', ');
+  return `import numpy as np\n\nX = np.array([\n  ${xRows}\n], dtype=np.float64)  # shape (N, 3) = [X0, X1, X2]\ny = np.array([${yRow}], dtype=np.float64)\n`;
 }
 
-function triggerDownload(filename, text) {
-  const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+function buildW1Numpy() {
+  // Transposed representation: (X0..X2) × (H1..H3)
+  const rowsT = [0,1,2].map(i => `[${w1.map(row => formatNumpy(row[i])).join(', ')}]`).join(',\n  ');
+  return `import numpy as np\n\nw1 = np.array([\n  ${rowsT}\n], dtype=np.float64)  # transposed: shape (3, 3) = (X0..X2) × (H1..H3)\n`;
 }
 
-function downloadDataCsv() {
-  // Export X1, X2, Y (omit X0)
-  const header = ['X1', 'X2', 'Y'];
-  const rows = [header, ...data.map(d => [d.x1, d.x2, d.y])];
-  triggerDownload('data_X1_X2_Y.csv', toCsv(rows));
+function buildW2Numpy() {
+  // Transposed representation: (H0..H3) × (1)
+  const rowsT = w2[0].map(v => `[${formatNumpy(v)}]`).join(',\n  ');
+  return `import numpy as np\n\nw2 = np.array([\n  ${rowsT}\n], dtype=np.float64)  # transposed: shape (4, 1) = (H0..H3) × (Ŷ)\n`;
 }
 
-function downloadW1Csv() {
-  // Rows: H0..H3, Cols: X0, X1, X2
-  const header = ['h/x', 'X0', 'X1', 'X2'];
-  const rows = [header];
-  for (let j = 0; j < w1.length; j++) {
-    rows.push([`H${j}`, ...w1[j]]);
+function buildAllNumpy() {
+  return [buildDataNumpy(), buildW1Numpy(), buildW2Numpy()].join('\n');
+}
+
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text);
+  } else {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
   }
-  triggerDownload('w1_4x3.csv', toCsv(rows));
 }
 
-function downloadW2Csv() {
-  // Row: Yhat, Cols: H0..H3
-  const header = ['out/h', 'H0', 'H1', 'H2', 'H3'];
-  const row = ['Ŷ', ...w2[0]];
-  triggerDownload('w2_1x4.csv', toCsv([header, row]));
+function formatNumpy(n) {
+  // keep consistent float formatting
+  const v = Number(n);
+  return Math.abs(v) < 1e-12 ? '0.0' : v.toFixed(6);
 }
 
 // ----------------------
@@ -286,32 +293,34 @@ function renderWeights() {
   if (!w1Body || !w2Body) return;
   w1Body.innerHTML = '';
   w2Body.innerHTML = '';
-  // w1 rows for hidden non-bias units H1..H3
-  for (let j = 0; j < w1.length; j++) {
+  // w1 transposed: rows X0..X2, columns H1..H3
+  const xLabels = ['X0', 'X1', 'X2'];
+  for (let i = 0; i < 3; i++) {
     const tr = document.createElement('tr');
     const th = document.createElement('th');
-    th.textContent = `H${j+1}`;
+    th.textContent = xLabels[i];
     th.style.textAlign = 'left';
     tr.appendChild(th);
-    for (let i = 0; i < w1[j].length; i++) {
+    for (let j = 0; j < 3; j++) {
       const td = document.createElement('td');
       td.textContent = formatNum(w1[j][i]);
       tr.appendChild(td);
     }
     w1Body.appendChild(tr);
   }
-  // w2 single row (output)
-  const tr2 = document.createElement('tr');
-  const th2 = document.createElement('th');
-  th2.textContent = 'Ŷ';
-  th2.style.textAlign = 'left';
-  tr2.appendChild(th2);
-  for (let j = 0; j < w2[0].length; j++) {
+  // w2 as single column (H0..H3 → Ŷ)
+  const hLabels = ['H0', 'H1', 'H2', 'H3'];
+  for (let j = 0; j < 4; j++) {
+    const tr2 = document.createElement('tr');
+    const th2 = document.createElement('th');
+    th2.textContent = hLabels[j];
+    th2.style.textAlign = 'left';
+    tr2.appendChild(th2);
     const td = document.createElement('td');
     td.textContent = formatNum(w2[0][j]);
     tr2.appendChild(td);
+    w2Body.appendChild(tr2);
   }
-  w2Body.appendChild(tr2);
 }
 
 // ----------------------
