@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Feedforward Network Visualizer (3-4-1)</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Feedforward Network Visualizer</h1>
+    </header>
+
+    <main class="layout">
+      <!-- Left: Data columns -->
+      <section class="panel" id="data-panel">
+        <h2>Inputs</h2>
+        <p class="hint">X0 is a column of ones. X1 and X2 are features.</p>
+        <div class="table-wrap">
+          <table id="data-table" aria-label="Input data">
+            <thead>
+              <tr>
+                <th>X0</th>
+                <th>X1</th>
+                <th>X2</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <h2 style="margin-top:16px;">Weights</h2>
+        <div class="table-wrap small" id="weights-wrap">
+          <table id="weights-table" aria-label="Network weights">
+            <thead>
+              <tr><th colspan="4">w1 (hidden layer)</th></tr>
+              <tr class="subhead"><th>h→/x</th><th>X0</th><th>X1</th><th>X2</th></tr>
+            </thead>
+            <tbody id="w1-body"></tbody>
+            <thead>
+              <tr><th colspan="5">w2 (output layer)</th></tr>
+              <tr class="subhead"><th>out→/h</th><th>H0</th><th>H1</th><th>H2</th><th>H3</th></tr>
+            </thead>
+            <tbody id="w2-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Middle: Network -->
+      <section class="panel" id="network-panel">
+        <h2>Network (3 → 4 → 1)</h2>
+        <svg id="network-svg" viewBox="0 0 640 420" role="img" aria-label="Network diagram"></svg>
+  </section>
+
+      <!-- Right: Loss -->
+      <section class="panel" id="loss-panel">
+        <h2>Log Loss</h2>
+        <div class="loss-value" id="loss-value">—</div>
+        <p class="hint small">
+          Loss = −(1/N) ∑ [ y·log(ŷ) + (1−y)·log(1−ŷ) ]
+        </p>
+        <div class="details" id="loss-details"></div>
+      </section>
+    </main>
+
+    <section class="qa" id="questions" aria-labelledby="qa-title">
+      <h2 id="qa-title">Questions</h2>
+      <div class="question-card" style="margin-top:20px;">
+        <div class="q-text">
+          <strong>Q1.</strong> What is the partial derivative <code>∂L/∂ŷ</code>?
+        </div>
+        <details class="answer">
+          <summary>Reveal answer</summary>
+          <div class="answer-body">
+            <div id="q2-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
+              <em>Numerical vector will appear here…</em>
+            </div>
+          </div>
+        </details>
+      </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q2.</strong> What is <code>∂ŷ/∂H₀</code>?
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div id="q3-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
+                <em>Numerical vector will appear here…</em>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q3.</strong> What is <code>∂L/∂H₀</code>?
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div id="q4-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
+                <em>Numerical vector will appear here…</em>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q4.</strong> What is <code>∂ŷ/∂w₂₀</code> (the derivative of the output with respect to the first output-layer weight)?
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div id="q5-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
+                <em>Numerical vector will appear here…</em>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q5.</strong> What is <code>∂L/∂w₂₀</code>?
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div id="q6-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
+                <em>Numerical vector will appear here…</em>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q6.</strong> Using a learning rate of 0.23, update <code>w₂₀</code> with one gradient descent step using the average gradient from Q5.
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div style="font-size:12px; color:#586174;">Update rule: w₂₀ ← w₂₀ − 0.23 · (1/N) · Σ[(ŷ − y)·H₀]</div>
+              <div id="q7-updated-weight" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
+                <em>Updated weight will appear here…</em>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q7.</strong> What is <code>∂H₀/∂w₁₀</code> (derivative of hidden unit H₀ with respect to the first input-layer weight from X₀→H₀)?
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div id="q8-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
+                <em>Numerical vector will appear here…</em>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q8.</strong> What is <code>∂L/∂w₁₀</code> (loss derivative w.r.t. the first input-layer weight X₀→H₀)?
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div id="q9-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
+                <em>Numerical vector will appear here…</em>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q9.</strong> What are the complete gradient matrices <code>∂L/∂w2</code> and <code>∂L/∂w1</code> (averaged over the dataset)?
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div style="font-size:12px; color:#586174; margin-bottom:6px;">Shapes: ∂L/∂w2 is 1×4, ∂L/∂w1 is 4×3</div>
+              <div><strong>∂L/∂w2</strong> = <span id="q10-grad-w2"><em>Will appear here…</em></span></div>
+              <div style="margin-top:8px;"><strong>∂L/∂w1</strong> = <span id="q10-grad-w1"><em>Will appear here…</em></span></div>
+            </div>
+          </details>
+        </div>
+        <div class="question-card" style="margin-top:20px;">
+          <div class="q-text">
+            <strong>Q10.</strong> With learning rate 0.23, what are the updated weights after one step using the averaged gradients (from Q9)?
+          </div>
+          <details class="answer">
+            <summary>Reveal answer</summary>
+            <div class="answer-body">
+              <div style="font-size:12px; color:#586174; margin-bottom:6px;">Update: w ← w − 0.23 · avg_grad</div>
+              <div><strong>w2(new)</strong> = <span id="q11-upd-w2"><em>Will appear here…</em></span></div>
+              <div style="margin-top:8px;"><strong>w1(new)</strong> = <span id="q11-upd-w1"><em>Will appear here…</em></span></div>
+            </div>
+          </details>
+        </div>
+    </section>
+
+    
+
+    <script src="./app.js"></script>
+  </body>
+  </html>
