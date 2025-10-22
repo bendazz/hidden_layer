@@ -74,7 +74,7 @@
       <h2 id="qa-title">Questions</h2>
       <div class="question-card" style="margin-top:20px;">
         <div class="q-text">
-          <strong>Q1.</strong> What is the partial derivative <code>∂L/∂ŷ</code>?
+          <strong>Q1.</strong> What is <code>∂L/∂ŷ</code>?
         </div>
         <details class="answer">
           <summary>Reveal answer</summary>
@@ -153,12 +153,12 @@
         </div>
         <div class="question-card" style="margin-top:20px;">
           <div class="q-text">
-            <strong>Q7.</strong> What is <code>∂H₁/∂w</code> for the first input-layer weight from <code>X₀→H₁</code>?
+            <strong>Q7.</strong> What is <code>∂H₁/∂w₁₀</code> for the first input-layer weight <code>X₀→H₁</code>?
           </div>
           <details class="answer">
             <summary>Reveal answer</summary>
             <div class="answer-body">
-              <div class="hint small">For ReLU: ∂H₁/∂w = ReLU'(z₁)·x₀ = 1{z₁&gt;0}·x₀</div>
+              <div class="hint small">For ReLU: ∂H₁/∂w₁₀ = ReLU'(z₁)·x₀ = 1{z₁&gt;0}·x₀, where w₁₀ denotes the weight from X₀ to H₁.</div>
               <div id="q8-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
                 <em>Numerical vector will appear here…</em>
               </div>
@@ -167,12 +167,12 @@
         </div>
         <div class="question-card" style="margin-top:20px;">
           <div class="q-text">
-            <strong>Q8.</strong> What is <code>∂L/∂w</code> for the first input-layer weight <code>X₀→H₁</code>?
+            <strong>Q8.</strong> What is <code>∂L/∂w₁₀</code> for the first input-layer weight <code>X₀→H₁</code>?
           </div>
           <details class="answer">
             <summary>Reveal answer</summary>
             <div class="answer-body">
-              <div class="hint small">Chain rule: (ŷ − y) · w₂₁ · ReLU'(z₁) · x₀</div>
+              <div class="hint small">Chain rule: ∂L/∂w₁₀ = (ŷ − y) · w₂₁ · ReLU'(z₁) · x₀ (averaged over N in this app).</div>
               <div id="q9-final-vector" style="margin-top:8px; font-size:12px; border-top:1px solid #e0e5ec; padding-top:6px;">
                 <em>Numerical vector will appear here…</em>
               </div>

@@ -324,7 +324,11 @@ function renderWeights() {
 }
 
 // ----------------------
-// 9) Populate numeric vectors for Q2 and Q3 final answers
+// 9) Populate numeric vectors for Q1–Q10 answers
+// Notes:
+// - For all derivatives of L (loss), we now average over N consistently.
+// - Raw network Jacobians not involving L (e.g., ∂ŷ/∂H₁) are NOT averaged.
+// - Full gradients (Q9) and weight updates (Q10) are already averaged.
 // ----------------------
 function renderFinalAnswerVectors() {
   const q2El = document.getElementById('q2-final-vector');
@@ -354,25 +358,26 @@ function renderFinalAnswerVectors() {
     x0Vec.push(d.x0);
     hMat.push(h);
   }
-  // Q2: dL/dŷ vector
+  const N = data.length || 1;
+  // Q1: ∂L/∂ŷ averaged over N: (1/N) * (∂ℓ/∂ŷ)
   if (q2El) {
     const dLdYhatVec = yhatVec.map((yhat, idx) => {
       const y = yVec[idx];
       const clip = Math.min(1 - eps, Math.max(eps, yhat));
-      return (clip - y) / (clip * (1 - clip));
+      return ((clip - y) / (clip * (1 - clip))) / N;
     });
     q2El.innerHTML = `[${dLdYhatVec.map(v=>v.toFixed(4)).join(', ')}]`;
   }
-  // Q3: ∂ŷ/∂H0 vector = ŷ(1-ŷ) * w20
+  // Q2: ∂ŷ/∂H1 vector = ŷ(1-ŷ) * w21 (not a loss derivative; no averaging)
   if (q3El) {
     const w21 = w2[0][1];
     const dy_dH1 = yhatVec.map(yhat => yhat * (1 - yhat) * w21);
     q3El.innerHTML = `[${dy_dH1.map(v=>v.toFixed(4)).join(', ')}]`;
   }
-  // Q4: ∂L/∂H0 = (ŷ - y) w20
+  // Q3: ∂L/∂H1 averaged over N = (1/N) * (ŷ - y) * w21
   if (q4El) {
     const w21 = w2[0][1];
-    const dL_dH1 = yhatVec.map((yhat, idx) => (yhat - yVec[idx]) * w21);
+    const dL_dH1 = yhatVec.map((yhat, idx) => ((yhat - yVec[idx]) * w21) / N);
     q4El.innerHTML = `[${dL_dH1.map(v=>v.toFixed(4)).join(', ')}]`;
   }
   if (q5El) {
@@ -386,24 +391,25 @@ function renderFinalAnswerVectors() {
     q5El.innerHTML = `[${dy_dw21.map(v=>v.toFixed(4)).join(', ')}]`;
   }
   if (q6El) {
-    // ∂L/∂w21 = ∑ (∂L/∂ŷ)(∂ŷ/∂w21); per-sample: (ŷ - y) * H1
+    // ∂L/∂w21 per-sample (averaged): (1/N) * (ŷ - y) * H1
     const h1Vec = data.map(d => {
       const z1 = w1[0][0]*d.x0 + w1[0][1]*d.x1 + w1[0][2]*d.x2;
       return Math.max(0, z1);
     });
-    const dL_dw21_vec = yhatVec.map((yhat, idx) => (yhat - yVec[idx]) * h1Vec[idx]);
+    const dL_dw21_vec_raw = yhatVec.map((yhat, idx) => (yhat - yVec[idx]) * h1Vec[idx]);
+    const dL_dw21_vec = dL_dw21_vec_raw.map(v => v / N);
     q6El.innerHTML = `[${dL_dw21_vec.map(v=>v.toFixed(4)).join(', ')}]`;
     // If Q7 exists, compute the averaged gradient and the updated weight
     if (q7El) {
-      const N = dL_dw21_vec.length || 1;
-      const avgGrad = dL_dw21_vec.reduce((a,b)=>a+b, 0) / N;
+      // Average gradient should be (1/N) * Σ raw = sum of averaged entries
+      const avgGrad = dL_dw21_vec.reduce((a,b)=>a+b, 0);
       const lr = 0.23;
       const w21_old = w2[0][1];
       const w21_new = w21_old - lr * avgGrad;
       q7El.innerHTML = `w₂₁(old) = ${w21_old.toFixed(4)} → w₂₁(new) = ${w21_new.toFixed(4)} (avg grad = ${avgGrad.toFixed(6)})`;
     }
   }
-  // Q7: ∂H1/∂w (first input weight X0→H1) = ReLU'(z1) * x0
+  // Q7: ∂H1/∂w10 (first input weight X0→H1) = ReLU'(z1) * x0
   if (q8El) {
     const w10 = w1[0][0]; // H1 row, X0 column
     const w11 = w1[0][1]; // H1 row, X1 column
@@ -415,7 +421,7 @@ function renderFinalAnswerVectors() {
     });
     q8El.innerHTML = `[${dH1_dw10.map(v=>v.toFixed(4)).join(', ')}]`;
   }
-  // Q8: ∂L/∂w (X0→H1) per-sample = (ŷ - y) * w21 * ReLU'(z1) * x0
+  // Q8: ∂L/∂w10 (X0→H1) averaged over N = (1/N) * (ŷ - y) * w21 * ReLU'(z1) * x0
   if (q9El) {
     const w21 = w2[0][1]; // output weight from H1 to Ŷ
     const w10 = w1[0][0];
@@ -424,7 +430,7 @@ function renderFinalAnswerVectors() {
     const dL_dw10_vec = data.map((d, idx) => {
       const z1 = w10 * d.x0 + w11 * d.x1 + w12 * d.x2;
       const reluPrime = z1 > 0 ? 1 : 0;
-      return (yhatVec[idx] - yVec[idx]) * w21 * reluPrime * d.x0;
+      return ((yhatVec[idx] - yVec[idx]) * w21 * reluPrime * d.x0) / N;
     });
     q9El.innerHTML = `[${dL_dw10_vec.map(v=>v.toFixed(6)).join(', ')}]`;
   }
